@@ -92,12 +92,13 @@ def make_otr_texture(png_path, original_type=1):
     """
     img = Image.open(png_path).convert('RGBA')
 
-    # N64 Intensity (I4/I8) textures use their single color channel for BOTH Color and Alpha.
-    # When PIL converts a grayscale image to RGBA, it hardcodes the Alpha channel to 255 (opaque).
-    # This caused fences, windows, and shadows to render as solid black/white blocks.
-    if original_type in [5, 6]:  # I4, I8
-        r, g, b, _ = img.split()
-        img = Image.merge('RGBA', (r, g, b, r))
+    # N64 Intensity and Intensity-Alpha textures encode transparency in the pixel data.
+    # Many Rice PNGs were saved without alpha, so PIL gives alpha=255 everywhere.
+    # Fix: regenerate alpha from luminance for types that use intensity-based transparency.
+    if original_type in [5, 6, 7, 8, 9]:  # I4, I8, IA4, IA8, IA16
+        r, g, b, a = img.split()
+        if a.getextrema() == (255, 255):  # alpha is all-opaque (broken)
+            img = Image.merge('RGBA', (r, g, b, r))
 
     w, h = img.size
     pixels = img.tobytes()
