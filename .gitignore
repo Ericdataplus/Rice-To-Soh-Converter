@@ -29,3 +29,6 @@ env.bak/
 venv.bak/
 
 *.spec
+
+# Local test files (large textures + base o2r)
+test/
