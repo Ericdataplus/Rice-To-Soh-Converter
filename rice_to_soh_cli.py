@@ -86,17 +86,19 @@ def rice_crc(data_bytes, width, height, n64_size, pitch_bytes):
 
 def make_otr_texture(png_path, original_type=1):
     """
-    Create an OTR V1 texture resource from a PNG file.
-
+    Create an OTR V1 texture resource.
     original_type: the TextureType from the base .o2r (preserves blend mode for
                    transparency types like IA8=8, IA16=9, CI4=3, CI8=4, etc.)
-                   Hardcoding 1 (RGBA32) broke alpha textures — they showed black.
-
-    Format:
-      [64-byte header] [Type:u32] [W:u32] [H:u32] [Flags:u32]
-      [HByteScale:f32] [VPixelScale:f32] [DataSize:u32] [RGBA pixels]
     """
     img = Image.open(png_path).convert('RGBA')
+
+    # N64 Intensity (I4/I8) textures use their single color channel for BOTH Color and Alpha.
+    # When PIL converts a grayscale image to RGBA, it hardcodes the Alpha channel to 255 (opaque).
+    # This caused fences, windows, and shadows to render as solid black/white blocks.
+    if original_type in [5, 6]:  # I4, I8
+        r, g, b, _ = img.split()
+        img = Image.merge('RGBA', (r, g, b, r))
+
     w, h = img.size
     pixels = img.tobytes()
 
@@ -111,7 +113,7 @@ def make_otr_texture(png_path, original_type=1):
 
     # V1 texture body
     body = bytearray()
-    body += struct.pack('<I', original_type)    # preserve original type — DO NOT hardcode 1
+    body += struct.pack('<I', original_type)                # TextureType (preserve to match blending)
     body += struct.pack('<I', w)                # Width
     body += struct.pack('<I', h)                # Height
     body += struct.pack('<I', 0x02)             # Flags = TEX_FLAG_LOAD_AS_IMG
