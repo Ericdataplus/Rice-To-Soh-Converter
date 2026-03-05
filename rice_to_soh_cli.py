@@ -114,11 +114,11 @@ def make_otr_texture(png_path, original_type=1):
 
     # V1 texture body
     body = bytearray()
-    body += struct.pack('<I', original_type)                # TextureType (preserve to match blending)
-    body += struct.pack('<I', w)                # Width
-    body += struct.pack('<I', h)                # Height
-    body += struct.pack('<I', 0x02)             # Flags = TEX_FLAG_LOAD_AS_IMG
-    body += struct.pack('<f', 1.0)              # HByteScale
+    body += struct.pack('<I', 1)  # preserve 1 = RGBA32 since our payload is always w*h*4!
+    body += struct.pack('<I', w)
+    body += struct.pack('<I', h)
+    body += struct.pack('<I', 0x02)             # TEX_FLAG_LOAD_AS_IMG = raw RGBA pixels
+    body += struct.pack('<f', 1.0)
     body += struct.pack('<f', 1.0)              # VPixelScale
     body += struct.pack('<I', len(pixels))      # ImageDataSize
     body += pixels                              # Raw RGBA32 pixel data
