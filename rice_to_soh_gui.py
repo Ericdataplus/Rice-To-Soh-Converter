@@ -94,7 +94,7 @@ def make_otr_texture(png_path, original_type=1):
     struct.pack_into('<I', header, 12, 0xDEADBEEF)
     struct.pack_into('<I', header, 16, 0xDEADBEEF)
     body = bytearray()
-    body += struct.pack('<I', original_type)   # preserve original type — DO NOT hardcode 1
+    body += struct.pack('<I', 1)                # ALWAYS 1 for RGBA32, since our payload is always w*h*4!
     body += struct.pack('<I', w)
     body += struct.pack('<I', h)
     body += struct.pack('<I', 0x02)             # TEX_FLAG_LOAD_AS_IMG = raw RGBA pixels

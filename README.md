@@ -1,5 +1,7 @@
 # Rice to SoH Texture Pack Converter
 
+👉 **[Launch the Web Version Here!](https://ericdataplus.github.io/Rice-To-Soh-Converter/)** 👈
+
 A straightforward python utility designed for mapping N64 Rice format texture packs (such as **Djipi's Celda Cellshade** and others) to the **Ship of Harkinian (.o2r)** mod format.
 
 Although initially created specifically to help convert Djipi's Ocarina of Time cel-shaded pack directly into SoH formats, this tool functions via CRC hashing matching and will happily convert other Rice N64 texture replacements provided the base archives match up.
