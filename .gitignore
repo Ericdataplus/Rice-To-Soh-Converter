@@ -32,3 +32,24 @@ venv.bak/
 
 # Local test files (large textures + base o2r)
 test/
+
+# Game assets & ROMs — COPYRIGHTED, never commit
+*.o2r
+*.otr
+*.z64
+*.n64
+*.v64
+*.zip
+*.7z
+
+# Rice texture packs (the artist's artwork, not ours to redistribute)
+celda_rice/
+*_rice/
+THE LEGEND OF ZELDA/
+*.png
+!docs/*.png
+
+# Generated reports
+unmatched_rice.csv
+matched.csv
+errors.csv
