@@ -12,6 +12,9 @@ QUICK START (no Python editing needed):
 OPTIONS:
     --rice "<folder>"    Rice PNG folder   (default: ./celda_rice/THE LEGEND OF ZELDA)
     --out  "<file.o2r>"  output .o2r path  (default: <SoH>/mods/celda.o2r)
+    --base "<file.o2r>"  EXTRA base archive to match against (repeatable). Extract one
+                         from the ROM version the pack author actually used (e.g. the
+                         PAL cart for European artists) for a real match-rate boost.
     --dry-run            match + write the CSV reports only; skip building the big .o2r
                          (fast: use this while tuning / to see what will match)
 
@@ -46,6 +49,9 @@ SOH_DIR = r"PUT_YOUR_SOH_FOLDER_HERE"   # your Ship of Harkinian install folder
 RICE_TEXTURES = os.path.join(SCRIPT_DIR, "celda_rice", "THE LEGEND OF ZELDA")
 OUTPUT = None                            # None -> <SoH>/mods/celda.o2r
 DRY_RUN = False
+EXTRA_BASES = []                         # extra base .o2r archives (--base); e.g. one
+                                         # extracted from the ROM version the pack
+                                         # author dumped on -- big match-rate boost
 # ============================================================
 
 MASK = 0xFFFFFFFF
@@ -77,6 +83,8 @@ def parse_args(argv):
             RICE_TEXTURES = argv[i + 1]; i += 2
         elif a == "--out" and i + 1 < len(argv):
             OUTPUT = argv[i + 1]; i += 2
+        elif a == "--base" and i + 1 < len(argv):
+            EXTRA_BASES.append(argv[i + 1]); i += 2
         elif a in ("--dry-run", "--report-only"):
             DRY_RUN = True; i += 1
         else:
@@ -223,7 +231,15 @@ def main():
         print(f"\nERROR: That SoH folder doesn't exist:\n   {SOH_DIR}")
         return
 
-    archives = find_base_archives(SOH_DIR)
+    extra = []
+    for p in EXTRA_BASES:
+        if os.path.exists(p):
+            extra.append(p)
+        else:
+            print(f"\nWARNING: --base archive not found, skipping:\n   {p}")
+    # Extra bases go FIRST: if the pack was authored on that ROM version, its
+    # archive should drive the matching; the install's archives fill in the rest.
+    archives = extra + find_base_archives(SOH_DIR)
     if not archives:
         print(f"\nERROR: No oot.o2r or oot-mq.o2r found in:\n   {SOH_DIR}")
         print("Point this at your Ship of Harkinian install folder (the one with soh.exe).")

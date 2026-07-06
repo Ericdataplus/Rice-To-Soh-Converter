@@ -94,11 +94,23 @@ It'll adapt every command to your exact setup, fix classic snags like `'python' 
 
 Because Rice packs and Ship of Harkinian identify textures in totally different ways, **not every texture transfers — and that's expected, not a failure:**
 
-- ✅ Roughly **62%** of the pack's textures convert and show up in-game (Link, NPCs, items, the overworld, UI, and dungeons).
-- ❌ Roughly **38%** can't be matched — they have no counterpart in SoH's game data, so those spots simply stay vanilla.
+- ✅ Roughly **62%** of the pack's textures convert out of the box — and **67%** with the multi-ROM trick below (Link, NPCs, items, the overworld, UI, dungeons, and the French/German menus).
+- ❌ The rest can't be matched, and *no* tool can: they're mostly **runtime-generated textures** — every frame of animated fire/lava dumped separately, skybox composites, gradient fades, and the pre-rendered JPEG backgrounds. The good news: they're largely duplicate frames of art that *did* convert, so the game looks more converted than the raw number suggests.
 - 📄 The script writes **`unmatched_rice.csv`** (everything that *didn't* make it) and **`matched.csv`** (everything that *did*) — so there's no mystery about what landed where.
 
 > 🌍 **Works on normal *and* Master Quest.** If both `oot.o2r` (normal) and `oot-mq.o2r` (Master Quest) are in your Ship of Harkinian folder, the tool matches against both, so the resulting pack works on either version of the game.
+
+### 🚀 Boost your match rate with `--base` (multi-ROM matching)
+
+Texture artists dumped their packs on whatever ROM *they* owned — and Djipi, being French, dumped Celda on a **PAL (European) cart**. Textures that differ between ROM revisions (all the French/German text, PAL-specific plates, censorship-era edits) will never CRC-match an American archive.
+
+The fix: let Ship of Harkinian extract an `oot.o2r` from another supported ROM revision (drop the ROM in a spare SoH folder, launch once, grab the generated `oot.o2r`), then feed it in as an extra matching source:
+
+```bash
+python rice_to_soh.py "C:\path\to\Ship of Harkinian" --base oot-pal.o2r --base oot-n64_10.o2r
+```
+
+Matches are keyed by **asset path**, which is the same across game versions — so textures matched via the PAL archive still work perfectly in your US install. For Djipi's Celda pack, adding PAL 1.0 + NTSC 1.0 archives lifts the match rate from 62% → **67%** (8,021 game textures replaced).
 
 ---
 
@@ -109,6 +121,7 @@ Because Rice packs and Ship of Harkinian identify textures in totally different 
 | `python rice_to_soh.py "<SoH folder>"` | The normal way — auto-detects the base game and output location |
 | `--rice "<folder>"` | Point to your Rice PNG folder if it's not the default |
 | `--out "<file.o2r>"` | Choose exactly where to write the converted pack |
+| `--base "<file.o2r>"` | Extra base archive to match against (repeatable) — see the `--base` section above |
 | `--dry-run` | Match + write the CSV reports only; skip building the big file (fast) |
 
 ### 🖱️ Prefer clicking to typing? (GUI included)
@@ -172,5 +185,6 @@ SoH's `.o2r` files are ZIP archives containing binary texture resources:
 - **[Djipi](https://emulationking.com/nintendo/n64/games/zeldaocarinaoftime/texturepacks/djipi2016cellshade/)** — the beautiful cel-shaded "Celda" texture artwork
 - **Rice / Mupen64Plus** — the texture CRC algorithm (`CalculateRDRAMCRC`)
 - **[Ship of Harkinian](https://github.com/HarbourMasters/Shipwright) (HarbourMasters)** — the OTR/O2R resource format and the PC port that makes all this possible
+- Sister project: **[Rice → 2 Ship 2 Harkinian Converter](https://github.com/Ericdataplus/Rice-To-2Ship-Converter)** for *Majora's Mask*
 
 *This tool only converts texture packs — it contains no game assets or copyrighted artwork. You provide your own pack and your own legally-owned game.*
