@@ -15,6 +15,10 @@ OPTIONS:
     --base "<file.o2r>"  EXTRA base archive to match against (repeatable). Extract one
                          from the ROM version the pack author actually used (e.g. the
                          PAL cart for European artists) for a real match-rate boost.
+    --map  "<file.json>" Prebuilt filename->asset-path mapping. celda_mapping.json
+                         (shipped with this repo, auto-loaded if next to the script)
+                         gives Djipi's Celda pack its full 67% with NO extra ROMs.
+    --no-map             Skip the auto-loaded mapping (pure CRC matching only).
     --dry-run            match + write the CSV reports only; skip building the big .o2r
                          (fast: use this while tuning / to see what will match)
 
@@ -33,7 +37,7 @@ How it works:
     If BOTH oot.o2r and oot-mq.o2r are present, it matches against both
     (Master Quest + original) for maximum in-game coverage.
 """
-import os, sys, struct, zipfile, time, csv
+import os, sys, struct, zipfile, time, csv, json
 
 try:
     from PIL import Image
@@ -52,6 +56,8 @@ DRY_RUN = False
 EXTRA_BASES = []                         # extra base .o2r archives (--base); e.g. one
                                          # extracted from the ROM version the pack
                                          # author dumped on -- big match-rate boost
+MAP_FILE = None                          # --map; None = auto-load celda_mapping.json
+USE_MAP = True                           # --no-map disables the auto-load
 # ============================================================
 
 MASK = 0xFFFFFFFF
@@ -75,7 +81,7 @@ SUFFIX_PRIORITY = {"all": 4, "ciByRGBA": 3, "rgb": 2, "a": 1}
 
 def parse_args(argv):
     """Tiny dependency-free CLI parser. First positional arg = SoH folder."""
-    global SOH_DIR, RICE_TEXTURES, OUTPUT, DRY_RUN
+    global SOH_DIR, RICE_TEXTURES, OUTPUT, DRY_RUN, MAP_FILE, USE_MAP
     positionals, i = [], 0
     while i < len(argv):
         a = argv[i]
@@ -85,6 +91,10 @@ def parse_args(argv):
             OUTPUT = argv[i + 1]; i += 2
         elif a == "--base" and i + 1 < len(argv):
             EXTRA_BASES.append(argv[i + 1]); i += 2
+        elif a == "--map" and i + 1 < len(argv):
+            MAP_FILE = argv[i + 1]; i += 2
+        elif a == "--no-map":
+            USE_MAP = False; i += 1
         elif a in ("--dry-run", "--report-only"):
             DRY_RUN = True; i += 1
         else:
@@ -315,6 +325,31 @@ def main():
                 if (idx + 1) % 4000 == 0:
                     print(f"  {os.path.basename(arch)}: {idx + 1}/{len(names)}...")
     elapsed = time.time() - t0
+
+    # ---- 2b. Prebuilt mapping (fills matches CRC-hashing can't reach here) ----
+    map_path = MAP_FILE or (os.path.join(SCRIPT_DIR, "celda_mapping.json") if USE_MAP else None)
+    if map_path and os.path.exists(map_path):
+        with open(map_path, encoding="utf-8") as f:
+            mapping = json.load(f).get("map", {})
+        by_name = {fn: (full, fn) for (full, fn) in rice.values()}
+        crc_of = {fn: crc for crc, (_full, fn) in rice.items()}
+        added_tex, added_paths = 0, 0
+        for fn, paths in mapping.items():
+            entry = by_name.get(fn)
+            if not entry:
+                continue
+            used = False
+            for path in paths:
+                if path not in matches:
+                    matches[path] = entry
+                    base_paths.add(path)
+                    added_paths += 1
+                    used = True
+            if used and crc_of.get(fn) not in matched_crcs:
+                matched_crcs.add(crc_of[fn])
+                added_tex += 1
+        if added_paths:
+            print(f"  + mapping ({os.path.basename(map_path)}): {added_tex} more of your textures, {added_paths} more game paths")
 
     pack_pct = len(matched_crcs) * 100 // max(len(rice), 1)
     cov_pct = len(matches) * 100 // max(len(base_paths), 1)
